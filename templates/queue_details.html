@@ -1,0 +1,272 @@
+
+{% extends 'base.html' %}
+
+{% block title %}{{ queue.name }} | QueueFlow{% endblock %}
+{% block page_heading %}Queue Operations{% endblock %}
+
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <a href="{% url 'manage_queues' %}" class="text-decoration-none text-muted small">
+                Queues
+            </a>
+            <i class="bi bi-chevron-right text-muted small"></i>
+            <span class="small text-primary fw-semibold">{{ queue.name }}</span>
+        </div>
+
+        <h1>{{ queue.name }}</h1>
+        <p>Manage customers, tokens and service operations.</p>
+    </div>
+
+    <a href="{% url 'manage_queues' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to Queues
+    </a>
+</div>
+
+<!-- Add Customer -->
+<div class="content-card">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="stat-icon icon-blue">
+            <i class="bi bi-person-plus"></i>
+        </div>
+
+        <div>
+            <h5 class="card-heading mb-1">Add Customer to Queue</h5>
+            <p class="card-description mb-0">
+                Register a customer and generate a new token.
+            </p>
+        </div>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="row g-3 align-items-end">
+
+            <div class="col-12 col-md-9">
+                <label for="person_name" class="form-label">Customer Name</label>
+
+                <input
+                    type="text"
+                    id="person_name"
+                    name="person_name"
+                    class="form-control"
+                    placeholder="Enter customer's full name"
+                    maxlength="100"
+                    required
+                >
+            </div>
+
+            <div class="col-12 col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Generate Token
+                </button>
+            </div>
+
+        </div>
+    </form>
+
+</div>
+
+<!-- Service Control -->
+<div class="content-card">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+        <div class="d-flex align-items-center gap-3">
+            <div class="stat-icon icon-green">
+                <i class="bi bi-megaphone"></i>
+            </div>
+
+            <div>
+                <h5 class="card-heading mb-1">Token Service Control</h5>
+                <p class="card-description mb-0">
+                    Call the next waiting customer for service.
+                </p>
+            </div>
+        </div>
+
+        <form method="POST" action="{% url 'call_next_token' queue.id %}">
+            {% csrf_token %}
+
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-broadcast me-1"></i>
+                Call Next Token
+            </button>
+        </form>
+
+    </div>
+
+</div>
+
+<!-- Token List -->
+<div class="content-card">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <h5 class="card-heading mb-1">Queue Waiting List</h5>
+            <p class="card-description mb-0">
+                View and control customer token positions and statuses.
+            </p>
+        </div>
+
+        <span class="badge text-bg-light border text-dark px-3 py-2">
+            {{ tokens|length }} Tokens
+        </span>
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="table">
+
+            <thead>
+                <tr>
+                    <th>Token</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Position</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for token in tokens %}
+
+                <tr>
+
+                    <td>
+                        <span class="fw-bold text-primary">
+                            #{{ token.token_number }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="fw-semibold text-dark">
+                            {{ token.person_name }}
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if token.status == 'Waiting' %}
+                            <span class="status-badge status-waiting">
+                                <i class="bi bi-clock me-1"></i> Waiting
+                            </span>
+
+                        {% elif token.status == 'Serving' %}
+                            <span class="status-badge status-serving">
+                                <i class="bi bi-person-check me-1"></i> Serving
+                            </span>
+
+                        {% elif token.status == 'Served' %}
+                            <span class="status-badge status-served">
+                                <i class="bi bi-check-circle me-1"></i> Served
+                            </span>
+
+                        {% elif token.status == 'Cancelled' %}
+                            <span class="status-badge status-cancelled">
+                                <i class="bi bi-x-circle me-1"></i> Cancelled
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+    {% if token.status == 'Waiting' %}
+        <span class="fw-bold">{{ token.position }}</span>
+    {% else %}
+        <span class="text-muted">—</span>
+    {% endif %}
+</td>
+
+                    <td>
+                        {% if token.status == 'Waiting' %}
+
+                            <div class="d-flex flex-wrap gap-2">
+
+                                <form method="POST" action="{% url 'move_token_up' token.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-outline-primary btn-sm"
+                                            title="Move up">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{% url 'move_token_down' token.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-outline-primary btn-sm"
+                                            title="Move down">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                </form>
+
+                                <form method="POST"
+                                      action="{% url 'cancel_token' token.id %}"
+                                      onsubmit="return confirm('Are you sure you want to cancel this token?');">
+
+                                    {% csrf_token %}
+
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-x-lg me-1"></i> Cancel
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        {% elif token.status == 'Serving' %}
+
+                            <form method="POST" action="{% url 'complete_token' token.id %}">
+                                {% csrf_token %}
+
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="bi bi-check2 me-1"></i>
+                                    Mark as Served
+                                </button>
+                            </form>
+
+                        {% else %}
+
+                            <span class="text-muted small">
+                                No actions available
+                            </span>
+
+                        {% endif %}
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td colspan="5" class="text-center py-5">
+
+                        <div class="stat-icon icon-blue mx-auto mb-3">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+
+                        <h6 class="fw-bold">No Tokens Available</h6>
+
+                        <p class="text-muted small mb-0">
+                            Add your first customer to get started.
+                        </p>
+
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

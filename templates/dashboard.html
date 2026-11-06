@@ -1,0 +1,320 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | QueueFlow{% endblock %}
+{% block page_heading %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h1>Overview</h1>
+        <p>Monitor and manage your queue operations from one place.</p>
+    </div>
+    <a href="{% url 'manage_queues' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Create New Queue
+    </a>
+</div>
+
+<!-- Statistics -->
+<div class="row g-3 mb-4">
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Total Queues</span>
+                <div class="stat-icon icon-blue"><i class="bi bi-list-task"></i></div>
+            </div>
+            <div class="stat-value">{{ total_queues }}</div>
+            <small class="text-muted">Queues created</small>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Waiting Tokens</span>
+                <div class="stat-icon icon-orange"><i class="bi bi-hourglass-split"></i></div>
+            </div>
+            <div class="stat-value">{{ waiting_tokens }}</div>
+            <small class="text-muted">Customers in waiting list</small>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Currently Serving</span>
+                <div class="stat-icon icon-blue"><i class="bi bi-person-check"></i></div>
+            </div>
+            <div class="stat-value">{{ serving_tokens }}</div>
+            <small class="text-muted">Active service tokens</small>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Completed Tokens</span>
+                <div class="stat-icon icon-green"><i class="bi bi-check-circle"></i></div>
+            </div>
+            <div class="stat-value">{{ completed_tokens }}</div>
+            <small class="text-muted">Successfully served</small>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Cancelled Tokens</span>
+                <div class="stat-icon icon-orange"><i class="bi bi-x-circle"></i></div>
+            </div>
+            <div class="stat-value">{{ cancelled_tokens }}</div>
+            <small class="text-muted">Cancelled customer tokens</small>
+        </div>
+    </div>
+
+</div>
+
+<!-- Performance Analytics -->
+<div class="row g-3 mb-4">
+
+    <div class="col-12 col-lg-6">
+        <div class="content-card h-100 mb-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-heading">Average Waiting Time</h5>
+                    <p class="card-description">Average time before service begins</p>
+                </div>
+                <div class="stat-icon icon-orange"><i class="bi bi-clock-history"></i></div>
+            </div>
+            <div class="mt-3">
+                <span class="fs-2 fw-bold">{{ average_waiting_time }}</span>
+                <span class="text-muted ms-1">minutes</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="content-card h-100 mb-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-heading">Average Service Time</h5>
+                    <p class="card-description">Average time taken to complete service</p>
+                </div>
+                <div class="stat-icon icon-green"><i class="bi bi-stopwatch"></i></div>
+            </div>
+            <div class="mt-3">
+                <span class="fs-2 fw-bold">{{ average_service_time }}</span>
+                <span class="text-muted ms-1">minutes</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Analytics Charts -->
+<div class="row g-3 mb-4">
+
+    <!-- Token Status Distribution -->
+    <div class="col-12 col-lg-5">
+        <div class="content-card h-100 mb-0">
+            <div class="mb-3">
+                <h5 class="card-heading">Token Status Distribution</h5>
+                <p class="card-description">
+                    Breakdown of all customer tokens by status.
+                </p>
+            </div>
+
+            <div style="position: relative; height: 300px;">
+                <canvas id="tokenStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Load Analysis -->
+    <div class="col-12 col-lg-7">
+        <div class="content-card h-100 mb-0">
+            <div class="mb-3">
+                <h5 class="card-heading">Queue Load Analysis</h5>
+                <p class="card-description">
+                    Current waiting customers in each queue.
+                </p>
+            </div>
+
+            <div style="position: relative; height: 300px;">
+                <canvas id="queueLoadChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Queue Overview -->
+<div class="content-card">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h5 class="card-heading">Queue Overview</h5>
+            <p class="card-description mb-0">
+                Current waiting-token count across your queues.
+            </p>
+        </div>
+
+        <a href="{% url 'manage_queues' %}" class="btn btn-outline-primary">
+            View All Queues
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Queue Name</th>
+                    <th>Waiting Customers</th>
+                    <th>Queue Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for queue in queue_lengths %}
+                <tr>
+                    <td class="fw-semibold">{{ queue.name }}</td>
+                    <td>{{ queue.waiting_count }}</td>
+                    <td>
+                        {% if queue.waiting_count > 0 %}
+                            <span class="status-badge status-waiting">Customers Waiting</span>
+                        {% else %}
+                            <span class="status-badge status-served">No Waiting Tokens</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted py-4">
+                        No queues created yet.
+                        <a href="{% url 'manage_queues' %}">Create your first queue</a>.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Safely transfer Django data to JavaScript -->
+{{ token_status_chart|json_script:"token-status-data" }}
+{{ queue_load_chart|json_script:"queue-load-data" }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Read chart data from Django
+    const tokenData = JSON.parse(
+        document.getElementById('token-status-data').textContent
+    );
+
+    const queueData = JSON.parse(
+        document.getElementById('queue-load-data').textContent
+    );
+
+    // Token Status Doughnut Chart
+    const tokenCanvas = document.getElementById('tokenStatusChart');
+
+    new Chart(tokenCanvas, {
+        type: 'doughnut',
+
+        data: {
+            labels: tokenData.labels,
+            datasets: [{
+                data: tokenData.values,
+                backgroundColor: [
+                    '#F59E0B',
+                    '#3B82F6',
+                    '#10B981',
+                    '#EF4444'
+                ],
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+                hoverOffset: 8
+            }]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            },
+
+            cutout: '65%'
+        }
+    });
+
+    // Queue Load Bar Chart
+    const queueCanvas = document.getElementById('queueLoadChart');
+
+    new Chart(queueCanvas, {
+        type: 'bar',
+
+        data: {
+            labels: queueData.labels,
+            datasets: [{
+                label: 'Waiting Customers',
+                data: queueData.values,
+                backgroundColor: '#4776E6',
+                borderRadius: 7,
+                maxBarThickness: 55
+            }]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Customers'
+                    }
+                },
+
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,143 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Manage Queues | QueueFlow{% endblock %}
+{% block page_heading %}Queue Management{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Manage Queues</h1>
+    <p>Create, organize and monitor all your queues from one workspace.</p>
+</div>
+
+<!-- Create Queue Section -->
+<div class="content-card">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="stat-icon icon-blue">
+            <i class="bi bi-plus-circle"></i>
+        </div>
+        <div>
+            <h5 class="card-heading mb-1">Create New Queue</h5>
+            <p class="card-description mb-0">
+                Set up a new queue for your operations.
+            </p>
+        </div>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="row align-items-end g-3">
+
+            <div class="col-12 col-md-9">
+                <label for="queue_name" class="form-label">
+                    Queue Name
+                </label>
+
+                <input
+                    type="text"
+                    id="queue_name"
+                    name="queue_name"
+                    class="form-control"
+                    placeholder="e.g. Customer Support, General Enquiries"
+                    maxlength="100"
+                    required
+                >
+            </div>
+
+            <div class="col-12 col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Create Queue
+                </button>
+            </div>
+
+        </div>
+    </form>
+
+</div>
+
+<!-- Existing Queues -->
+<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+    <div>
+        <h5 class="fw-bold mb-1">Your Queues</h5>
+        <p class="card-description mb-0">
+            Manage your existing queue operations.
+        </p>
+    </div>
+
+    <span class="badge text-bg-light border text-dark px-3 py-2">
+        {{ queues|length }} Queues
+    </span>
+</div>
+
+<div class="row g-3">
+
+    {% for queue in queues %}
+
+    <div class="col-12 col-md-6 col-xl-4">
+
+        <div class="content-card h-100 mb-0">
+
+            <div class="d-flex justify-content-between align-items-start mb-3">
+
+                <div class="stat-icon icon-blue">
+                    <i class="bi bi-list-task"></i>
+                </div>
+
+                <span class="status-badge status-served">
+                    Active
+                </span>
+
+            </div>
+
+            <h5 class="fw-bold mb-2">{{ queue.name }}</h5>
+
+            <p class="text-muted small mb-4">
+                <i class="bi bi-calendar3 me-1"></i>
+                Created {{ queue.created_at|date:"d M Y" }}
+            </p>
+
+            <div class="d-flex justify-content-between align-items-center border-top pt-3">
+
+                <small class="text-muted">
+                    Queue ID: #{{ queue.id }}
+                </small>
+
+                <a href="{% url 'queue_details' queue.id %}"
+                   class="btn btn-primary btn-sm">
+                    Manage Queue
+                    <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% empty %}
+
+    <div class="col-12">
+        <div class="content-card text-center py-5">
+
+            <div class="stat-icon icon-blue mx-auto mb-3">
+                <i class="bi bi-inbox"></i>
+            </div>
+
+            <h5 class="fw-bold">No Queues Yet</h5>
+
+            <p class="text-muted mb-0">
+                Create your first queue using the form above.
+            </p>
+
+        </div>
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}
